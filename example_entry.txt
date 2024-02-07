@@ -1,0 +1,28 @@
+{'MESSAGE': 'ts=2024-02-07T01:37:59.619Z caller=collector.go:169 level=error '
+            'msg="collector failed" name=arp duration_seconds=0.00038913 '
+            'err="could not get ARP entries: rtnetlink NeighMessage has a '
+            'wrong attribute data length"',
+ 'PRIORITY': 6,
+ 'SYSLOG_FACILITY': 3,
+ 'SYSLOG_IDENTIFIER': 'node_exporter',
+ '_BOOT_ID': UUID('03e518da-0920-4d25-ab35-2cd75fb8c0e9'),
+ '_CAP_EFFECTIVE': '0',
+ '_CMDLINE': '/nix/store/mpwj13czscvcb83fy9vicnrx726idsrl-node_exporter-1.7.0/bin/node_exporter '
+             '--web.listen-address 127.0.0.1:9100',
+ '_COMM': 'node_exporter',
+ '_EXE': '/nix/store/mpwj13czscvcb83fy9vicnrx726idsrl-node_exporter-1.7.0/bin/node_exporter',
+ '_GID': 997,
+ '_HOSTNAME': 'heimchen',
+ '_MACHINE_ID': UUID('ae41c16a-b81e-4c13-9810-cc90c36eba95'),
+ '_PID': 790,
+ '_RUNTIME_SCOPE': 'system',
+ '_STREAM_ID': '640bba6fd9de4ed6a100ca03e96b7572',
+ '_SYSTEMD_CGROUP': '/system.slice/prometheus-node-exporter.service',
+ '_SYSTEMD_INVOCATION_ID': '6689935c53e44d219f405abe4178f3a4',
+ '_SYSTEMD_SLICE': 'system.slice',
+ '_SYSTEMD_UNIT': 'prometheus-node-exporter.service',
+ '_TRANSPORT': 'stdout',
+ '_UID': 998,
+ '__CURSOR': 's=80f9b33d55344413ba71646384867086;i=4496;b=03e518da09204d25ab352cd75fb8c0e9;m=2323f3a90;t=610c0beb5df91;x=c4a51772c343609a',
+ '__MONOTONIC_TIMESTAMP': journal.Monotonic(timestamp=datetime.timedelta(seconds=9432, microseconds=939152), bootid=UUID('03e518da-0920-4d25-ab35-2cd75fb8c0e9')),
+ '__REALTIME_TIMESTAMP': datetime.datetime(2024, 2, 7, 2, 37, 59, 619473, tzinfo=datetime.timezone(datetime.timedelta(seconds=3600), 'CET'))}

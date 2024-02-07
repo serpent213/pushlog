@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import namedtuple
 from datetime import datetime, timedelta
 from fuzzywuzzy import process
 import click
@@ -14,63 +15,65 @@ import yaml
 
 from pprint import pprint
 
+Unit = namedtuple('Unit', ['match', 'priorities', 'include_regexs', 'exclude_regexs'])
+
 @click.command()
 @click.option('--config', prompt='Path to configuration file',
               help='The YAML configuration file to apply.')
 def main(config):
     with open(config, 'r') as yaml_file:
-        values = yaml.safe_load(yaml_file)
-        priorities = values.get('priorities', [])
-        include_regexs = values.get('include', [])
-        exclude_regexs = values.get('exclude', [])
-        collect_timeout = values.get('collect-timeout', 5)
-        deduplication_timeout = values.get('deduplication-timeout', 30)
-        fuzzy_threshold = values.get('fuzzy-threshold', 90)
-        pushover = values.get('pushover', {})
+        config = yaml.safe_load(yaml_file)
+        units = [Unit(u['match'], u['priorities'], u['include'], u['exclude']) for u in config.get('units', [])]
+        collect_timeout = config.get('collect-timeout', 5) # [s]
+        deduplication_timeout = config.get('deduplication-timeout', 30) # [min.]
+        fuzzy_threshold = config.get('fuzzy-threshold', 92) # [%]
+        pushover = config.get('pushover', {})
         
     j = systemd.journal.Reader()
     j.log_level(systemd.journal.LOG_INFO)
     j.this_boot()
     j.seek_tail()
     j.get_previous()
-    # j.add_match(_SYSTEMD_UNIT='systemd-journald.service')
 
     entries_buffer = []
     history_buffer = {}
-    last_collected_time = datetime.now()
+    last_entry_time = datetime.now()
+    collection_triggered = False
     while True:
         if j.wait(1) == systemd.journal.APPEND:
             for entry in j:
-                pprint(entry)
-                if should_process_entry(entry, priorities, include_regexs, exclude_regexs, history_buffer):
-                    message = entry['MESSAGE']
-
-                    entries_buffer.append(message)
+                if should_process_entry(entry, units, fuzzy_threshold, history_buffer):
+                    entries_buffer.append(entry)
+                    if not collection_triggered:
+                        last_entry_time = datetime.now()
+                        collection_triggered = True
         
-        if (datetime.now() - last_collected_time).total_seconds() >= collect_timeout:
+        if collection_triggered and (datetime.now() - last_entry_time).total_seconds() >= collect_timeout:
             send_collected_messages(entries_buffer, pushover)
             entries_buffer = []
-            last_collected_time = datetime.now()
+            collection_triggered = False
 
-            # Remove entries older than 30 minutes from the history buffer
+            # Remove old entries from the history buffer
             for message in list(history_buffer):
                 if datetime.now() - history_buffer[message] > timedelta(minutes=deduplication_timeout):
                     del history_buffer[message]
 
-def should_process_entry(entry, priorities, include_regexs, exclude_regexs, fuzzy_threshold, history_buffer):
-    if not isinstance(entry, dict) or not 'PRIORITY' in entry or not entry['PRIORITY'] in priorities:
+def should_process_entry(entry, config_units, fuzzy_threshold, history_buffer):
+    # For each entry, match the _SYSTEMD_UNIT against units' match fields
+    unit = next((u for u in config_units if re.search(u.match, entry.get('_SYSTEMD_UNIT', ''))), None)
+    if not unit:
         return False
+
+    if not 'PRIORITY' in entry or not entry['PRIORITY'] in unit.priorities:
+        return False
+
     message = entry.get('MESSAGE', '')
-    for regex in exclude_regexs:
-        if re.search(regex, message):
-            return False
-    include_match = False
-    for regex in include_regexs:
-        if re.search(regex, message):
-            include_match = True
-            break
-    if not include_match:
+    if any(re.search(regex, message) for regex in unit.exclude_regexs):
         return False
+    if len(unit.include_regexs) > 0:
+        # Pass all messages if no include filter is specified
+        if not any(re.search(regex, message) for regex in unit.include_regexs):
+            return False
 
     if fuzzy_threshold > 0:
         # Check against history buffer (fuzzy match), strip numbers first
@@ -80,8 +83,8 @@ def should_process_entry(entry, priorities, include_regexs, exclude_regexs, fuzz
         stripped = message.translate(should_process_entry.translation_table)
 
         matches = process.extract(stripped, list(history_buffer.keys()), limit=1)
-        if len(matches) > 0:
-            print(f"Fuzzywuzzy: {matches[0][1]}% ({stripped})")
+        # if len(matches) > 0:
+        #     print(f"Fuzzywuzzy: {matches[0][1]}% ({stripped})")
         if len(matches) > 0 and matches[0][1] >= fuzzy_threshold:  # fuzzy matching threshold in %
             return False
 
@@ -90,10 +93,22 @@ def should_process_entry(entry, priorities, include_regexs, exclude_regexs, fuzz
     # Pass
     return True
 
+def format_message(message):
+    # Extract necessary fields
+    unit_name = message.get('_SYSTEMD_UNIT', '')
+    syslog_identifier = message.get('SYSLOG_IDENTIFIER', '')
+    timestamp = message.get('__REALTIME_TIMESTAMP')
+
+    # Assemble the journalctl-like string
+    result = f"{timestamp} {unit_name}[{syslog_identifier}]: {message.get('MESSAGE', '')}"
+
+    return result
+
 def send_collected_messages(entries_buffer, pushover):
     if entries_buffer:
-        entry_text = '\n'.join(entries_buffer)
-        send_pushover_notification(entry_text, pushover)
+        formatted_messages = [format_message(msg) for msg in entries_buffer]
+        full_text = '\n'.join(formatted_messages)
+        send_pushover_notification(full_text, pushover)
 
 def send_pushover_notification(message, pushover):
     print("===message===")
