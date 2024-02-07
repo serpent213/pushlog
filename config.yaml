@@ -1,0 +1,9 @@
+priorities: [0, 1, 2, 3, 4, 5, 6]
+include:
+  - '.*'
+exclude:
+  - 'xxrestarting'
+collect-timeout: 5
+pushover:
+  user: 'user_token'
+  token: 'app_token'
