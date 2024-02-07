@@ -4,6 +4,8 @@ include:
 exclude:
   - 'xxrestarting'
 collect-timeout: 5
+deduplication-timeout: 30
+fuzzy-threshold: 90
 pushover:
   user: 'user_token'
   token: 'app_token'

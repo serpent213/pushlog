@@ -12,6 +12,8 @@ import time
 import urllib
 import yaml
 
+from pprint import pprint
+
 @click.command()
 @click.option('--config', prompt='Path to configuration file',
               help='The YAML configuration file to apply.')
@@ -21,36 +23,41 @@ def main(config):
         priorities = values.get('priorities', [])
         include_regexs = values.get('include', [])
         exclude_regexs = values.get('exclude', [])
-        collect_timeout = values.get('collect-timeout', 0)
+        collect_timeout = values.get('collect-timeout', 5)
+        deduplication_timeout = values.get('deduplication-timeout', 30)
+        fuzzy_threshold = values.get('fuzzy-threshold', 90)
         pushover = values.get('pushover', {})
         
     j = systemd.journal.Reader()
     j.log_level(systemd.journal.LOG_INFO)
     j.this_boot()
+    j.seek_tail()
+    j.get_previous()
     # j.add_match(_SYSTEMD_UNIT='systemd-journald.service')
 
     entries_buffer = []
     history_buffer = {}
-    timer = None
+    last_collected_time = datetime.now()
     while True:
-        if j.wait() == systemd.journal.APPEND:
+        if j.wait(1) == systemd.journal.APPEND:
             for entry in j:
+                pprint(entry)
                 if should_process_entry(entry, priorities, include_regexs, exclude_regexs, history_buffer):
                     message = entry['MESSAGE']
 
                     entries_buffer.append(message)
-                    history_buffer[message] = datetime.now()
-
-                    if timer is None or not timer.is_alive():
-                        timer = threading.Timer(collect_timeout, send_collected_messages, args=[entries_buffer, pushover])
-                        timer.start()
+        
+        if (datetime.now() - last_collected_time).total_seconds() >= collect_timeout:
+            send_collected_messages(entries_buffer, pushover)
+            entries_buffer = []
+            last_collected_time = datetime.now()
 
             # Remove entries older than 30 minutes from the history buffer
             for message in list(history_buffer):
-                if datetime.now() - history_buffer[message] > timedelta(minutes=30):
+                if datetime.now() - history_buffer[message] > timedelta(minutes=deduplication_timeout):
                     del history_buffer[message]
 
-def should_process_entry(entry, priorities, include_regexs, exclude_regexs, history_buffer):
+def should_process_entry(entry, priorities, include_regexs, exclude_regexs, fuzzy_threshold, history_buffer):
     if not isinstance(entry, dict) or not 'PRIORITY' in entry or not entry['PRIORITY'] in priorities:
         return False
     message = entry.get('MESSAGE', '')
@@ -65,12 +72,20 @@ def should_process_entry(entry, priorities, include_regexs, exclude_regexs, hist
     if not include_match:
         return False
 
-    # Check against history buffer and discard duplicates (fuzzy match)
-    matches = process.extract(message, list(history_buffer.keys()), limit=1)
-    if len(matches) > 0:
-        print(f"Fuzzywuzzy: {matches[0][1]}% ({message})")
-    if len(matches) > 0 and matches[0][1] >= 80:  # fuzzy matching threshold in %
-        return False
+    if fuzzy_threshold > 0:
+        # Check against history buffer (fuzzy match), strip numbers first
+        if getattr(should_process_entry, "translation_table", None) is None:
+            # use the function object for a hacky singleton
+            should_process_entry.translation_table = str.maketrans('', '', '0123456789')
+        stripped = message.translate(should_process_entry.translation_table)
+
+        matches = process.extract(stripped, list(history_buffer.keys()), limit=1)
+        if len(matches) > 0:
+            print(f"Fuzzywuzzy: {matches[0][1]}% ({stripped})")
+        if len(matches) > 0 and matches[0][1] >= fuzzy_threshold:  # fuzzy matching threshold in %
+            return False
+
+        history_buffer[stripped] = datetime.now()
 
     # Pass
     return True
@@ -79,7 +94,6 @@ def send_collected_messages(entries_buffer, pushover):
     if entries_buffer:
         entry_text = '\n'.join(entries_buffer)
         send_pushover_notification(entry_text, pushover)
-    del entries_buffer[:]
 
 def send_pushover_notification(message, pushover):
     print("===message===")
