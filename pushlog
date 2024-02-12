@@ -13,8 +13,6 @@ import time
 import urllib
 import yaml
 
-# from pprint import pprint
-
 Unit = namedtuple("Unit", ["match", "priorities", "include_regexs", "exclude_regexs"])
 
 @click.command()
@@ -97,9 +95,8 @@ def should_process_entry(entry, config_units, fuzzy_threshold, history_buffer):
         if len(matches) > 0 and matches[0][1] >= fuzzy_threshold:  # fuzzy matching threshold in %
             return False
 
-    history_buffer[stripped] = datetime.now()
-
     # Pass
+    history_buffer[stripped] = datetime.now()
     return True
 
 def format_message(message):
