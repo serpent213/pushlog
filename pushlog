@@ -23,7 +23,7 @@ def main(config):
         config = yaml.safe_load(yaml_file)
         units = [Unit(u["match"], u["priorities"], u["include"], u["exclude"]) for u in config.get("units", [])]
         collect_timeout = config.get("collect-timeout", 5) # [s]
-        deduplication_timeout = config.get("deduplication-timeout", 30) # [min.]
+        deduplication_window = config.get("deduplication-window", 30) # [min.]
         fuzzy_threshold = config.get("fuzzy-threshold", 92) # [%]
         pushover = config.get("pushover", {})
 
@@ -63,7 +63,7 @@ def main(config):
         if (datetime.now() - last_cleanup_time).total_seconds() >= 60:
             # Remove old entries from the history buffer once per minute
             for message in list(history_buffer):
-                if datetime.now() - history_buffer[message] > timedelta(minutes = deduplication_timeout):
+                if datetime.now() - history_buffer[message] > timedelta(minutes = deduplication_window):
                     del history_buffer[message]
             last_cleanup_time = datetime.now()
 
