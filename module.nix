@@ -78,19 +78,38 @@ in
     {
       systemd.services.pushlog = {
         description = "Pushlog journal forwarder";
+        requires = [ "network-online.target" "systemd-journald.service" ];
         after = [ "network-online.target" "systemd-journald.service" ];
-        wants = [ "network-online.target" "systemd-journald.service" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           ExecStart = "${cfg.package}/bin/pushlog --config ${configFile}";
           Type = "simple";
           Restart = "always";
           RestartSec = "5s";
+
+          # Hardening
+          CapabilityBoundingSet = "";
+          DynamicUser = true;
+          Group = "systemd-journal";
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
           NoNewPrivileges = true;
-          PrivateTmp = true;
           PrivateDevices = true;
+          PrivateTmp = true;
+          PrivateUsers = true;
+          ProtectControlGroups = true;
           ProtectHome = true;
-          ProtectSystem = "full";
+          ProtectHostname = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectProc = true;
+          ProtectSystem = "strict";
+          RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallFilter = "~@aio @chown @clock @cpu-emulation @debug @keyring @ipc @module @mount @obsolete @raw-io @reboot @setuid @swap @privileged @resources";
+          UMask = "0077";
         } // optionalAttrs (cfg.environmentFile != null) {
           EnvironmentFile = cfg.environmentFile;
         };
