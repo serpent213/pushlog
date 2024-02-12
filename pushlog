@@ -7,27 +7,35 @@ import click
 import http.client
 import os
 import re
+import sys
 import systemd.journal
-import threading
 import time
 import urllib
 import yaml
 
-from pprint import pprint
+# from pprint import pprint
 
-Unit = namedtuple('Unit', ['match', 'priorities', 'include_regexs', 'exclude_regexs'])
+Unit = namedtuple("Unit", ["match", "priorities", "include_regexs", "exclude_regexs"])
 
 @click.command()
-@click.option('--config', prompt='Path to configuration file',
-              help='The YAML configuration file to apply.')
+@click.option("--config", prompt="Path to configuration file",
+              help="The YAML configuration file to apply.")
 def main(config):
-    with open(config, 'r') as yaml_file:
+    with open(config, "r") as yaml_file:
         config = yaml.safe_load(yaml_file)
-        units = [Unit(u['match'], u['priorities'], u['include'], u['exclude']) for u in config.get('units', [])]
-        collect_timeout = config.get('collect-timeout', 5) # [s]
-        deduplication_timeout = config.get('deduplication-timeout', 30) # [min.]
-        fuzzy_threshold = config.get('fuzzy-threshold', 92) # [%]
-        pushover = config.get('pushover', {})
+        units = [Unit(u["match"], u["priorities"], u["include"], u["exclude"]) for u in config.get("units", [])]
+        collect_timeout = config.get("collect-timeout", 5) # [s]
+        deduplication_timeout = config.get("deduplication-timeout", 30) # [min.]
+        fuzzy_threshold = config.get("fuzzy-threshold", 92) # [%]
+        pushover = config.get("pushover", {})
+
+    if "PUSHLOG_PUSHOVER_TOKEN" in os.environ:
+        pushover["token"] = os.environ["PUSHLOG_PUSHOVER_TOKEN"]
+    if "PUSHLOG_PUSHOVER_USER_KEY" in os.environ:
+        pushover["user"] = os.environ["PUSHLOG_PUSHOVER_USER_KEY"]
+    if not pushover["token"] or not pushover["user"]:
+        print(f"Pushover API credentials missing. Aborting.", file=sys.stderr)
+        sys.exit(1)
         
     j = systemd.journal.Reader()
     j.log_level(systemd.journal.LOG_INFO)
@@ -38,6 +46,7 @@ def main(config):
     entries_buffer = []
     history_buffer = {}
     last_entry_time = datetime.now()
+    last_cleanup_time = datetime.now()
     collection_triggered = False
     while True:
         if j.wait(1) == systemd.journal.APPEND:
@@ -53,21 +62,23 @@ def main(config):
             entries_buffer = []
             collection_triggered = False
 
-            # Remove old entries from the history buffer
+        if (datetime.now() - last_cleanup_time).total_seconds() >= 60:
+            # Remove old entries from the history buffer once per minute
             for message in list(history_buffer):
-                if datetime.now() - history_buffer[message] > timedelta(minutes=deduplication_timeout):
+                if datetime.now() - history_buffer[message] > timedelta(minutes = deduplication_timeout):
                     del history_buffer[message]
+            last_cleanup_time = datetime.now()
 
 def should_process_entry(entry, config_units, fuzzy_threshold, history_buffer):
-    # For each entry, match the _SYSTEMD_UNIT against units' match fields
-    unit = next((u for u in config_units if re.search(u.match, entry.get('_SYSTEMD_UNIT', ''))), None)
+    # match the _SYSTEMD_UNIT against units' match fields
+    unit = next((u for u in config_units if re.search(u.match, entry.get("_SYSTEMD_UNIT", ""))), None)
     if not unit:
         return False
 
-    if not 'PRIORITY' in entry or not entry['PRIORITY'] in unit.priorities:
+    if not "PRIORITY" in entry or not entry["PRIORITY"] in unit.priorities:
         return False
 
-    message = entry.get('MESSAGE', '')
+    message = entry.get("MESSAGE", "")
     if any(re.search(regex, message) for regex in unit.exclude_regexs):
         return False
     if len(unit.include_regexs) > 0:
@@ -75,54 +86,49 @@ def should_process_entry(entry, config_units, fuzzy_threshold, history_buffer):
         if not any(re.search(regex, message) for regex in unit.include_regexs):
             return False
 
-    if fuzzy_threshold > 0:
+    if fuzzy_threshold < 100:
         # Check against history buffer (fuzzy match), strip numbers first
         if getattr(should_process_entry, "translation_table", None) is None:
             # use the function object for a hacky singleton
-            should_process_entry.translation_table = str.maketrans('', '', '0123456789')
+            should_process_entry.translation_table = str.maketrans("", "", "0123456789")
         stripped = message.translate(should_process_entry.translation_table)
 
         matches = process.extract(stripped, list(history_buffer.keys()), limit=1)
-        # if len(matches) > 0:
-        #     print(f"Fuzzywuzzy: {matches[0][1]}% ({stripped})")
         if len(matches) > 0 and matches[0][1] >= fuzzy_threshold:  # fuzzy matching threshold in %
             return False
 
-        history_buffer[stripped] = datetime.now()
+    history_buffer[stripped] = datetime.now()
 
     # Pass
     return True
 
 def format_message(message):
-    # Extract necessary fields
-    unit_name = message.get('_SYSTEMD_UNIT', '')
-    syslog_identifier = message.get('SYSLOG_IDENTIFIER', '')
-    timestamp = message.get('__REALTIME_TIMESTAMP')
+    unit_name = message.get("_SYSTEMD_UNIT", "")
+    syslog_identifier = message.get("SYSLOG_IDENTIFIER", "")
+    timestamp = message.get("__REALTIME_TIMESTAMP")
+    message = message.get('MESSAGE', '')
 
-    # Assemble the journalctl-like string
-    result = f"{timestamp} {unit_name}[{syslog_identifier}]: {message.get('MESSAGE', '')}"
+    result = f"{timestamp} {unit_name}[{syslog_identifier}]: {message}"
 
     return result
 
 def send_collected_messages(entries_buffer, pushover):
     if entries_buffer:
         formatted_messages = [format_message(msg) for msg in entries_buffer]
-        full_text = '\n'.join(formatted_messages)
+        full_text = "\n".join(formatted_messages)
         send_pushover_notification(full_text, pushover)
 
 def send_pushover_notification(message, pushover):
-    print("===message===")
-    print(message)
-    print("======")
-    return
     conn = http.client.HTTPSConnection("api.pushover.net:443")
     conn.request("POST", "/1/messages.json",
                  urllib.parse.urlencode({
-                     "token": pushover.get('API Key'),
-                     "user": pushover.get('User Key'),
+                     "token": pushover.get("token"),
+                     "user": pushover.get("user"),
                      "message": message,
                  }), {"Content-type": "application/x-www-form-urlencoded"})
-    conn.getresponse()
+    response = conn.getresponse()
+    if response.status != 200:
+        print(f"Pushover API error: {response.status} {response.reason}", file=sys.stderr)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,21 +1,23 @@
 collect-timeout: 5 # seconds
 deduplication-timeout: 30 # minutes
-fuzzy-threshold: 92 # percent
-pushover:
-  user: 'user_token'
-  token: 'app_token'
+fuzzy-threshold: 92 # percent, 100 to disable
+# Can be set/overridden in environment (PUSHLOG_PUSHOVER_TOKEN, PUSHLOG_PUSHOVER_USER_KEY)
+# pushover:
+#   token: "efgh9999"
+#   user: "abcd0000"
+
 # First `match` wins
 # Exclude trumps include
 # Empty `include` list matches everything
 # Priorities: emerg (0), alert (1), crit (2), err (3), warning (4), notice (5), info (6), debug (7)
 units:
-  - match: 'node-red'
+  - match: "node-red"
     priorities: [0, 1, 2, 3, 4, 5, 6]
     include: []
     exclude:
-      - '[{}]'
-  - match: '.*'
+      - "[{}]"
+  - match: ".*"
     priorities: [0, 1, 2, 3, 4, 5, 6]
     include:
-      - 'caller'
+      - "caller"
     exclude: []
