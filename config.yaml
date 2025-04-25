@@ -1,10 +1,22 @@
 collect-timeout: 5 # seconds
-deduplication-timeout: 30 # minutes
-fuzzy-threshold: 92 # percent, 100 to disable
+deduplication-window: 30 # minutes
+fuzzy-threshold: 95 # percent, 100 to disable
+
 # Can be set/overridden in environment (PUSHLOG_PUSHOVER_TOKEN, PUSHLOG_PUSHOVER_USER_KEY)
 # pushover:
 #   token: "efgh9999"
 #   user: "abcd0000"
+
+# title: "System Logs"
+# priority-map:  # Map journald priorities to Pushover priorities
+#   "0": 2       # emerg -> emergency (2)
+#   "1": 1       # alert -> high (1)
+#   "2": 1       # crit -> high (1)
+#   "3": 0       # err -> normal (0)
+#   "4": -1      # warning -> low (-1)
+#   "5": -2      # notice -> lowest (-2)
+#   "6": -2      # info -> lowest (-2)
+#   "7": -2      # debug -> lowest (-2)
 
 # First `match` wins
 # Exclude trumps include
@@ -17,7 +29,7 @@ units:
     exclude:
       - "[{}]"
   - match: ".*"
-    priorities: [0, 1, 2, 3, 4, 5, 6]
+    priorities: [0, 1, 2, 3, 4, 5]
     include:
       - "caller"
     exclude: []
