@@ -1,0 +1,37 @@
+collect-timeout: 5 # seconds
+deduplication-window: 30 # minutes
+fuzzy-threshold: 95 # percent, 100 to disable
+
+pushover:
+  token: "test_token"
+  user: "test_user"
+
+title: "Test Logs"
+priority-map:  # Map journald priorities to Pushover priorities
+  "0": 2       # emerg -> emergency (2)
+  "1": 1       # alert -> high (1)
+  "2": 1       # crit -> high (1)
+  "3": 0       # err -> normal (0)
+  "4": -1      # warning -> low (-1)
+  "5": -2      # notice -> lowest (-2)
+  "6": -2      # info -> lowest (-2)
+  "7": -2      # debug -> lowest (-2)
+
+units:
+  - match: "test-unit"
+    priorities: [0, 1, 2, 3, 4, 5, 6]
+    include: []
+    exclude:
+      - "exclude_me"
+  - match: "another-unit"
+    priorities: [0, 1, 2, 3]
+    include:
+      - "error"
+      - "critical"
+    exclude: 
+      - "ignore"
+  - match: "regex-unit"
+    priorities: [0, 1, 2, 3, 4, 5]
+    include:
+      - "pattern\\d+"
+    exclude: []

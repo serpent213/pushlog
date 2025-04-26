@@ -20,10 +20,16 @@
       pkgs = nixpkgs.legacyPackages.${system};
       pythonPatched = pkgs.python3.withPackages (pp:
         with pp; [
+          # Runtime dependencies
           click
           fuzzywuzzy
           pyyaml
           systemd
+          
+          # Development dependencies
+          pytest
+          pytest-cov
+          flake8
         ]);
       buildInputs = [
         pythonPatched
