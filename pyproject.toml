@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pushlog"
+version = "0.2.0"
+description = "Pushover notifications for systemd journal entries"
+authors = [
+    {name = "Steffen Beyer", email = "steffen@beyer.io"}
+]
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "click",
+    "PyYAML",
+    "fuzzywuzzy",
+    "systemd-python",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/serpent213/pushlog"
+"Bug Tracker" = "https://github.com/serpent213/pushlog/issues"
+
+[project.scripts]
+pushlog = "pushlog_lib:main"
+
+[tool.setuptools]
+py-modules = ["pushlog_lib"]
+
+[tool.pytest]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[project.optional-dependencies]
+dev = [
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "flake8",
+]
