@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
+"""Tests for the pattern matching functionality."""
 
 import re
 import unittest
-from collections import namedtuple
-from datetime import datetime
-
-import pytest
 
 from pushlog_lib import Unit, should_process_entry
 
 
 class TestPatternMatching(unittest.TestCase):
+    """Test cases for the pattern matching and message processing functionality."""
     def setUp(self):
         # Create test units similar to those in the config
         self.units = [

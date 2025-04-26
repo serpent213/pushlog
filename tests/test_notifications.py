@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
+"""Tests for the notification sending functionality."""
 
 import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from pushlog_lib import (format_message, send_collected_messages,
                          send_pushover_notification)
 
 
 class TestNotifications(unittest.TestCase):
+    """Test cases for the notification formatting and sending functionality."""
     def setUp(self):
         # Sample journal entry
         self.entry = {
@@ -58,7 +58,7 @@ class TestNotifications(unittest.TestCase):
 
         # Check that send_pushover_notification was called with the right parameters
         mock_send_notification.assert_called_once()
-        args, kwargs = mock_send_notification.call_args
+        args, _ = mock_send_notification.call_args
 
         # Check that the message contains our test message
         self.assertIn(self.entry["MESSAGE"], args[0])
@@ -85,7 +85,7 @@ class TestNotifications(unittest.TestCase):
 
         # Check that our custom sender was called with the right parameters
         mock_custom_sender.assert_called_once()
-        args, kwargs = mock_custom_sender.call_args
+        args, _ = mock_custom_sender.call_args
 
         # Check that the message contains our test message
         self.assertIn(self.entry["MESSAGE"], args[0])
@@ -114,7 +114,7 @@ class TestNotifications(unittest.TestCase):
 
         # Check that the request was made correctly
         mock_connection.request.assert_called_once()
-        args, kwargs = mock_connection.request.call_args
+        args, _ = mock_connection.request.call_args
 
         # Check the request method and URL
         self.assertEqual(args[0], "POST")

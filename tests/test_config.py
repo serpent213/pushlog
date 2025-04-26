@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
+"""Tests for the configuration loading functionality."""
 
 import os
 import unittest
 from unittest.mock import patch
 
-import pytest
 import yaml
 
 from pushlog_lib import load_config
 
 
 class TestConfig(unittest.TestCase):
+    """Test cases for the configuration loading and parsing functionality."""
     def setUp(self):
         # Path to the test config file
         self.config_path = os.path.join(

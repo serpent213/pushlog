@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Library for monitoring systemd journal entries and sending Pushover notifications."""
 
 import http.client
 import os
@@ -18,7 +19,7 @@ Unit = namedtuple("Unit", ["match", "priorities", "include_regexs", "exclude_reg
 
 def load_config(config_path):
     """Load and parse the YAML configuration file."""
-    with open(config_path, "r") as yaml_file:
+    with open(config_path, "r", encoding="utf-8") as yaml_file:
         config = yaml.safe_load(yaml_file)
         units = []
         # Pre-compile regular expressions for better performance
@@ -40,15 +41,15 @@ def load_config(config_path):
         pushover = config.get("pushover", {})
         title = config.get("title")
         priority_map = config.get("priority-map", {})
-        
+
     return {
-        "units": units, 
+        "units": units,
         "collect_timeout": collect_timeout,
         "deduplication_window": deduplication_window,
         "fuzzy_threshold": fuzzy_threshold,
         "pushover": pushover,
         "title": title,
-        "priority_map": priority_map
+        "priority_map": priority_map,
     }
 
 
@@ -159,7 +160,7 @@ def send_pushover_notification(message, pushover, journald_priority=None):
                 f"Pushover API error: {response.status} {response.reason}",
                 file=sys.stderr,
             )
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Error sending notification to Pushover: {e}", file=sys.stderr)
 
 
@@ -172,7 +173,9 @@ def cleanup_history(history_buffer, deduplication_window):
             del history_buffer[message]
 
 
-def run_daemon(config_path, journal_reader=None, notification_sender=None):
+def run_daemon(
+    config_path, journal_reader=None, notification_sender=None
+):  # pylint: disable=too-many-locals,too-many-branches
     """Run the main daemon loop."""
     config_data = load_config(config_path)
     units = config_data["units"]
@@ -193,7 +196,7 @@ def run_daemon(config_path, journal_reader=None, notification_sender=None):
     if priority_map:
         pushover["priority_map"] = priority_map
     if not pushover.get("token") or not pushover.get("user"):
-        print(f"Pushover API credentials missing. Aborting.", file=sys.stderr)
+        print("Pushover API credentials missing. Aborting.", file=sys.stderr)
         sys.exit(1)
 
     if journal_reader is None:
@@ -239,9 +242,9 @@ def run_daemon(config_path, journal_reader=None, notification_sender=None):
     help="The YAML configuration file to apply.",
 )
 def main(config):
+    """CLI entry point that runs the daemon with the specified config file."""
     run_daemon(config)
 
 
 if __name__ == "__main__":
-    import sys
     main(sys.argv[1:])

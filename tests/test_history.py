@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
+"""Tests for the history cleanup functionality."""
 
 import unittest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-import pytest
-
 from pushlog_lib import cleanup_history
 
 
 class TestHistoryCleanup(unittest.TestCase):
+    """Test cases for the history buffer cleanup functionality."""
     def setUp(self):
         # Create a history buffer with entries of various ages
         self.now = datetime.now()

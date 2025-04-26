@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
+"""Tests for the daemon functionality."""
 
 import os
 import unittest
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
-
-import pytest
-import systemd.journal
+from datetime import datetime
 
 from pushlog_lib import load_config, should_process_entry
 
 
 class TestDaemon(unittest.TestCase):
+    """Test cases for the daemon functionality and components."""
     def setUp(self):
         # Path to the test config file
         self.config_path = os.path.join(

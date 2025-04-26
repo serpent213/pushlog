@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Setup script for the pushlog package."""
 
 from setuptools import setup, find_packages
 
@@ -15,7 +16,7 @@ setup(
         "click",
         "PyYAML",
         "fuzzywuzzy",
-        "python-systemd",
+        "systemd-python",
     ],
     extras_require={
         "dev": [
