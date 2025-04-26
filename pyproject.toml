@@ -27,6 +27,7 @@ dependencies = [
     "click",
     "PyYAML",
     "fuzzywuzzy",
+    "Levenshtein",
     "systemd-python",
 ]
 

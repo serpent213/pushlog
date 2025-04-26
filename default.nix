@@ -11,6 +11,7 @@ python3Packages.buildPythonApplication rec {
   propagatedBuildInputs = with python3Packages; [
     click
     fuzzywuzzy
+    levenshtein
     pyyaml
     systemd
   ];
