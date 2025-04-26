@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pushlog"
-version = "0.2.0"
+version = "0.3.0"
 description = "Pushover notifications for systemd journal entries"
 authors = [
     {name = "Steffen Beyer", email = "steffen@beyer.io"}

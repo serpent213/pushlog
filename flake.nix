@@ -25,7 +25,7 @@
           fuzzywuzzy
           pyyaml
           systemd
-          
+
           # Development dependencies
           pytest
           pytest-cov

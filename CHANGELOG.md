@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.0 – 2025-04-26
+
+### Improved
+
+- Test suite
+- GitHub Actions for linting and testing
+
 ## v0.2.0 – 2025-04-26
 
 ### Added

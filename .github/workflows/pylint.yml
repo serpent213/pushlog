@@ -22,4 +22,4 @@ jobs:
         python -m pip install ".[dev]"
     - name: Analysing the code with pylint
       run: |
-        pylint -d duplicate-code $(git ls-files '*.py')
+        pylint -d duplicate-code pushlog $(git ls-files '*.py')

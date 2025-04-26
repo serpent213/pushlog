@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Pushlog launcher"""
 
 import sys
 from pushlog_lib import main
