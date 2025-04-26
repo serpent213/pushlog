@@ -19,6 +19,7 @@ setup(
     ],
     extras_require={
         "dev": [
+            "pylint",
             "pytest",
             "pytest-cov",
             "flake8",
