@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.1 – 2025-04-27
+
+### Fixed
+
+- Stripping numbers for fuzzy matching did not work properly (introduced in v0.3.0)
+
 ## v0.3.0 – 2025-04-26
 
 ### Improved
