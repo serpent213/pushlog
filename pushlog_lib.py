@@ -85,13 +85,13 @@ def should_process_entry(entry, config_units, fuzzy_threshold, history_buffer):
         stripped = message.translate(should_process_entry.translation_table)
 
         matches = process.extract(stripped, list(history_buffer.keys()), limit=1)
+        history_buffer[stripped] = datetime.now()
         if (
-            len(matches) > 0 and matches[0][1] >= fuzzy_threshold
-        ):  # fuzzy matching threshold in %
+            len(matches) > 0 and matches[0][1] >= fuzzy_threshold  # fuzzy matching threshold in %
+        ):
             return False
 
     # Pass
-    history_buffer[message] = datetime.now()
     return True
 
 

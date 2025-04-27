@@ -172,7 +172,7 @@ class TestPatternMatching(unittest.TestCase):
         entry1 = {
             "_SYSTEMD_UNIT": "test-unit.service",
             "PRIORITY": 3,
-            "MESSAGE": "Error 123: Connection failed",
+            "MESSAGE": "Error A12: Connection failed",
         }
 
         # This should be processed
@@ -180,11 +180,11 @@ class TestPatternMatching(unittest.TestCase):
             should_process_entry(entry1, self.units, self.fuzzy_threshold, self.history)
         )
 
-        # Similar entry with different numbers (should be deduplicated)
+        # Similar entry with different ID (should be deduplicated)
         entry2 = {
             "_SYSTEMD_UNIT": "test-unit.service",
             "PRIORITY": 3,
-            "MESSAGE": "Error 456: Connection failed",
+            "MESSAGE": "Error B12: Connection failed",
         }
 
         # This should be deduplicated due to fuzzy matching
@@ -202,6 +202,32 @@ class TestPatternMatching(unittest.TestCase):
         # This should be processed as it's different
         self.assertTrue(
             should_process_entry(entry3, self.units, self.fuzzy_threshold, self.history)
+        )
+
+    def test_fuzzy_deduplication_numbers(self):
+        """Test fuzzy deduplication number stripping."""
+        # First entry
+        entry1 = {
+            "_SYSTEMD_UNIT": "test-unit.service",
+            "PRIORITY": 3,
+            "MESSAGE": "2025/04/27 01:53:26.530198+02:00 - Error A12: Connection failed",
+        }
+
+        # This should be processed
+        self.assertTrue(
+            should_process_entry(entry1, self.units, self.fuzzy_threshold, self.history)
+        )
+
+        # Similar entry with different timestamp (should be deduplicated)
+        entry2 = {
+            "_SYSTEMD_UNIT": "test-unit.service",
+            "PRIORITY": 3,
+            "MESSAGE": "2025/04/27 01:58:26.923006+02:00 - Error A12: Connection failed",
+        }
+
+        # This should be deduplicated due to number stripping
+        self.assertFalse(
+            should_process_entry(entry2, self.units, self.fuzzy_threshold, self.history)
         )
 
     def test_fuzzy_threshold_disabled(self):
