@@ -15,6 +15,7 @@ import yaml
 from fuzzywuzzy import process
 
 Unit = namedtuple("Unit", ["match", "priorities", "include_regexs", "exclude_regexs"])
+number_stripper = str.maketrans("", "", "0123456789")
 
 
 def load_config(config_path):
@@ -79,11 +80,7 @@ def should_process_entry(entry, config_units, fuzzy_threshold, history_buffer):
 
     if fuzzy_threshold < 100:
         # Check against history buffer (fuzzy match), strip numbers first
-        if getattr(should_process_entry, "translation_table", None) is None:
-            # use the function object for a hacky singleton
-            should_process_entry.translation_table = str.maketrans("", "", "0123456789")
-        stripped = message.translate(should_process_entry.translation_table)
-
+        stripped = message.translate(number_stripper)
         matches = process.extract(stripped, list(history_buffer.keys()), limit=1)
         history_buffer[stripped] = datetime.now()
         if (
