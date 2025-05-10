@@ -126,7 +126,7 @@ in {
             ProtectHostname = true;
             ProtectKernelModules = true;
             ProtectKernelTunables = true;
-            ProtectProc = true;
+            ProtectProc = "noaccess";
             ProtectSystem = "strict";
             RestrictAddressFamilies = ["AF_INET" "AF_INET6"];
             RestrictNamespaces = true;
