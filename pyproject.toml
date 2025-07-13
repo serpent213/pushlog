@@ -6,11 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "pushlog"
 version = "0.3.1"
 description = "Pushover notifications for systemd journal entries"
-authors = [
-    {name = "Steffen Beyer", email = "steffen@beyer.io"}
-]
-license = "0BSD"
+authors = [{ name = "Steffen Beyer", email = "steffen@beyer.io" }]
 readme = "README.md"
+license = "0BSD"
+license-files = ["LICENSE"]
 requires-python = ">=3.6"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -49,9 +48,4 @@ python_functions = "test_*"
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [project.optional-dependencies]
-dev = [
-    "pylint",
-    "pytest",
-    "pytest-cov",
-    "flake8",
-]
+dev = ["pylint", "pytest", "pytest-cov", "flake8"]
