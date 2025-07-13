@@ -4,17 +4,20 @@
 }:
 python3Packages.buildPythonApplication {
   pname = "pushlog";
-  version = "0.3.0";
+  version = "0.3.1";
   format = "pyproject";
 
   src = ./.;
+
+  nativeBuildInputs = with python3Packages; [
+    setuptools
+  ];
 
   propagatedBuildInputs = with python3Packages; [
     click
     fuzzywuzzy
     levenshtein
     pyyaml
-    setuptools
     systemd
   ];
 
@@ -22,15 +25,15 @@ python3Packages.buildPythonApplication {
     pytestCheckHook
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Pushlog systemd journal forwarder";
     longDescription = ''
       A lightweight Python daemon that filters and forwards journald log messages to Pushover
     '';
     homepage = "https://github.com/serpent213/pushlog";
-    platforms = platforms.linux;
+    platforms = lib.platforms.linux;
     mainProgram = "pushlog";
-    license = licenses.bsd0;
-    maintainers = with maintainers; [serpent213];
+    license = lib.licenses.bsd0;
+    maintainers = with lib.maintainers; [serpent213];
   };
 }

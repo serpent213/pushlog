@@ -4,11 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pushlog"
-version = "0.3.0"
+version = "0.3.1"
 description = "Pushover notifications for systemd journal entries"
 authors = [
     {name = "Steffen Beyer", email = "steffen@beyer.io"}
 ]
+license = "0BSD"
 readme = "README.md"
 requires-python = ">=3.6"
 classifiers = [
@@ -20,7 +21,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
